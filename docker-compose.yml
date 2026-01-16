@@ -16,11 +16,30 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "5173:5173"
-    volumes:
-      - ./Client:/app
-      - /app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "150"
     depends_on:
       - server
+
+    # Docker Compose Watch
+    develop:
+      watch:
+        # Sync source changes into container (hot reload)
+        - action: sync
+          path: ./Client/src
+          target: /app/src
+
+        - action: sync
+          path: ./Client/public
+          target: /app/public
+
+        # If deps change, rebuild image (npm ci reruns)
+        - action: rebuild
+          path: ./Client/package.json
+
+        - action: rebuild
+          path: ./Client/package-lock.json
 
   # PROD: Nginx (serves built /dist)
   client-prod:
