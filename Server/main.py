@@ -64,16 +64,23 @@ def calculate_compatibility(*lineage):
 
 def find_optimal_lineage(lineage_names, available_names):
     child_name = lineage_names[0]
+    fixed_parents = [ p for p in lineage_names[1:3] if p]
+    fixed_gps = [ gp for gp in lineage_names[3:] if gp]
+
     other_names = [n for n in available_names if n != child_name]
+    available_parent_names = set(other_names + fixed_parents)
+    available_gp_names = set(other_names + fixed_gps)
+
     if len(other_names) < 2: # Need 2
         return {"error": "Not enough characters available"}
 
     aff_to_child = {n: get_character_affinity(child_name, n) for n in other_names}
     best_halves = {}
 
-    for p in other_names:
+
+    for p in available_parent_names:
         gp_scores = []
-        for gp in other_names:
+        for gp in available_gp_names:
             if gp == p: continue
             score = get_character_affinity(child_name, p, gp)
             gp_scores.append((score, gp))
@@ -86,8 +93,7 @@ def find_optimal_lineage(lineage_names, available_names):
     best_total_score = -1
     best_lineage_result = None
 
-    fixed_parents = [p for p in [lineage_names[1], lineage_names[2]] if p]
-    for p1, p2 in product(other_names + fixed_parents, repeat=2):
+    for p1, p2 in product(available_parent_names, repeat=2):
         if p1 == p2: continue
         if lineage_names[1] and p1 != lineage_names[1]: continue
         if lineage_names[2] and p2 != lineage_names[2]: continue
