@@ -1,0 +1,185 @@
+:root {
+  --bg: #1e1e1f;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  /* responsive sizing */
+  --card: clamp(110px, 16vmin, 190px);
+  --cardSmall: clamp(95px, 14vmin, 170px);
+  --gap: clamp(10px, 3vmin, 34px);
+  --gapSmall: clamp(8px, 2.2vmin, 22px);
+  --pad: clamp(10px, 2.8vmin, 28px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden; /* prevent any page scroll */
+}
+
+.page {
+  height: 100vh;          /* lock to viewport */
+  overflow: hidden;       /* prevent internal scrollbars */
+  background: radial-gradient(ellipse at top, #2a2a2d 0%, var(--bg) 60%);
+  color: #eee;
+  padding: var(--pad);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2vmin, 18px);
+}
+
+.topBar {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pillBtn {
+  width: clamp(120px, 18vmin, 160px);
+  height: clamp(52px, 8vmin, 74px);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(230, 220, 255, 0.95);
+  color: #3a3a3a;
+  font-size: clamp(16px, 2.4vmin, 22px);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.gridArea {
+  flex: 1 1 auto;
+  min-height: 0;          /* allows flex child to shrink instead of overflow */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 3vmin, 26px);
+}
+
+.row {
+  width: min(900px, 100%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--gap);
+}
+
+.row--four { gap: var(--gapSmall); }
+
+.slotWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot {
+  width: var(--cardSmall);
+  height: var(--cardSmall);
+  border-radius: 14px;
+  border: 2px dashed rgba(110, 80, 190, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(217,208,255,0.95),
+    rgba(217,208,255,0.80)
+  );
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  position: relative;
+}
+
+.row--center .slot {
+  width: var(--card);
+  height: var(--card);
+}
+
+.slotLabel {
+  display: inline-block;
+  padding: clamp(6px, 1.2vmin, 10px) clamp(8px, 1.6vmin, 12px);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.55);
+  color: #2b2b2b;
+  font-weight: 700;
+  font-size: clamp(12px, 1.8vmin, 14px);
+}
+
+.bubble {
+  position: absolute;
+  top: clamp(-14px, -1.6vmin, -10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: clamp(4px, 0.9vmin, 6px) clamp(10px, 1.6vmin, 14px);
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: clamp(11px, 1.6vmin, 14px);
+  color: rgba(0,0,0,0.78);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.35);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.bottomBar {
+  flex: 0 0 auto;
+  width: min(900px, 100%);
+  margin: 0 auto;
+  height: clamp(44px, 7vmin, 58px);
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr 0.6fr 1fr;
+  align-items: center;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.bottomLeft {
+  background: #8f82b8;
+  color: #111;
+  font-weight: 900;
+  padding: 0 clamp(10px, 1.8vmin, 14px);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: clamp(14px, 2vmin, 18px);
+}
+
+.bottomMid {
+  background: #f2f2f2;
+  color: #111;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.2vmin, 10px);
+}
+
+.metric {
+  font-size: clamp(18px, 3vmin, 26px);
+  font-weight: 900;
+  color: #7a2cff;
+}
+
+.metric--orange { color: #ff8a00; }
+
+.dot {
+  width: clamp(8px, 1.6vmin, 12px);
+  height: clamp(8px, 1.6vmin, 12px);
+  border-radius: 999px;
+  background: #7a2cff;
+}
+
+.bottomRight {
+  background: #a9c5f3;
+  color: #111;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: clamp(13px, 2vmin, 16px);
+}
