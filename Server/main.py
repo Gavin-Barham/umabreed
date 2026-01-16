@@ -198,8 +198,7 @@ def optimize():
 #     'lineage': [child_name, p1_name, p2_name, gp1_1_name, gp1_2_name, gp2_1_name, gp2_2_name]}
 
 
-
+load_data()
 
 if __name__ == '__main__':
-    load_data()
     app.run(debug=False, port=5000)

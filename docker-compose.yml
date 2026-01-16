@@ -1,0 +1,34 @@
+services:
+  server:
+    build:
+      context: ./Server
+    environment:
+      FLASK_APP_MODULE: "main:app"
+      PORT: "5000"
+    ports:
+      - "5000:5000"
+
+  # DEV: Vite (HMR, prints URL)
+  client-dev:
+    profiles: ["dev"]
+    build:
+      context: ./Client
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Client:/app
+      - /app/node_modules
+    depends_on:
+      - server
+
+  # PROD: Nginx (serves built /dist)
+  client-prod:
+    profiles: ["prod"]
+    build:
+      context: ./Client
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
