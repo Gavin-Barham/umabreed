@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
 import "../Styles/affinityLayout.css";
-import CharacterPickerModal from "../Components/CharacterPickerModal";
+
+import CharacterPickerModal from "./CharacterPickerModal";
+import type { CharacterOption } from "./CharacterPickerModal";
+
 import characters from "../Data/characters.json";
 
 type SlotKey = "child" | "p1" | "p2" | "gp1" | "gp2" | "gp3" | "gp4";
@@ -33,7 +36,7 @@ function Bubble({ multiplier }: { multiplier?: number | null }) {
 
 type CardSlotProps = {
   label: string;
-  value?: string | null;
+  selected?: CharacterOption | null;
   showBubble?: boolean;
   bubbleMultiplier?: number | null;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
@@ -41,26 +44,30 @@ type CardSlotProps = {
 
 function CardSlot({
   label,
-  value = null,
+  selected = null,
   showBubble = false,
   bubbleMultiplier = null,
   onClick,
 }: CardSlotProps) {
-  const text = value && value.trim().length ? value : label;
-
   return (
     <div className="slotWrap">
       {showBubble && <Bubble multiplier={bubbleMultiplier} />}
+
       <button type="button" className="slot" onClick={onClick}>
-        <span className="slotLabel">{text}</span>
+        {selected ? (
+          <img className="slotImg" src={selected.image} alt={selected.name} />
+        ) : (
+          <span className="slotLabel">{label}</span>
+        )}
       </button>
     </div>
   );
 }
 
 export default function AffinityLayout(): React.JSX.Element {
-  // Selected names per slot
-  const [slots, setSlots] = useState<Record<SlotKey, string | null>>({
+  const options = characters as CharacterOption[];
+
+  const [slots, setSlots] = useState<Record<SlotKey, CharacterOption | null>>({
     child: null,
     p1: null,
     p2: null,
@@ -70,7 +77,6 @@ export default function AffinityLayout(): React.JSX.Element {
     gp4: null,
   });
 
-  // Bubble multipliers (defaults)
   const multipliers = useMemo(
     () => ({
       p1: null,
@@ -85,30 +91,24 @@ export default function AffinityLayout(): React.JSX.Element {
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<SlotKey>("child");
+  const [modalKey, setModalKey] = useState(0);
 
   const openPicker = (slot: SlotKey) => {
     setActiveSlot(slot);
+    setModalKey((k) => k + 1); // remount picker -> clears search / resets selection
     setPickerOpen(true);
   };
 
   const titleForSlot = (slot: SlotKey) => {
     switch (slot) {
-      case "child":
-        return "Select Child";
-      case "p1":
-        return "Select Parent 1";
-      case "p2":
-        return "Select Parent 2";
-      case "gp1":
-        return "Select GP 1";
-      case "gp2":
-        return "Select GP 2";
-      case "gp3":
-        return "Select GP 3";
-      case "gp4":
-        return "Select GP 4";
-      default:
-        return "Select Character";
+      case "child": return "Select Child";
+      case "p1": return "Select Parent 1";
+      case "p2": return "Select Parent 2";
+      case "gp1": return "Select GP 1";
+      case "gp2": return "Select GP 2";
+      case "gp3": return "Select GP 3";
+      case "gp4": return "Select GP 4";
+      default: return "Select Character";
     }
   };
 
@@ -120,13 +120,7 @@ export default function AffinityLayout(): React.JSX.Element {
           type="button"
           onClick={() =>
             setSlots({
-              child: null,
-              p1: null,
-              p2: null,
-              gp1: null,
-              gp2: null,
-              gp3: null,
-              gp4: null,
+              child: null, p1: null, p2: null, gp1: null, gp2: null, gp3: null, gp4: null,
             })
           }
         >
@@ -139,59 +133,52 @@ export default function AffinityLayout(): React.JSX.Element {
       </div>
 
       <div className="gridArea">
-        {/* Child */}
         <div className="row row--center">
-          <CardSlot
-            label="Child"
-            value={slots.child}
-            onClick={() => openPicker("child")}
-          />
+          <CardSlot label="Child" selected={slots.child} onClick={() => openPicker("child")} />
         </div>
 
-        {/* Parents */}
         <div className="row row--two">
           <CardSlot
             label="Parent 1"
-            value={slots.p1}
+            selected={slots.p1}
             showBubble
             bubbleMultiplier={multipliers.p1}
             onClick={() => openPicker("p1")}
           />
           <CardSlot
             label="Parent 2"
-            value={slots.p2}
+            selected={slots.p2}
             showBubble
             bubbleMultiplier={multipliers.p2}
             onClick={() => openPicker("p2")}
           />
         </div>
 
-        {/* Grandparents */}
         <div className="row row--four">
           <CardSlot
             label="GP 1"
-            value={slots.gp1}
+            selected={slots.gp1}
             showBubble
             bubbleMultiplier={multipliers.gp1}
             onClick={() => openPicker("gp1")}
           />
           <CardSlot
             label="GP 2"
-            value={slots.gp2}
+            selected={slots.gp2}
             showBubble
             bubbleMultiplier={multipliers.gp2}
             onClick={() => openPicker("gp2")}
           />
           <CardSlot
             label="GP 3"
-            value={slots.gp3}
+            selected={slots.gp3}
             showBubble
             bubbleMultiplier={multipliers.gp3}
             onClick={() => openPicker("gp3")}
           />
           <CardSlot
             label="GP 4"
-            value={slots.gp4}
+            selected={slots.gp4}
             showBubble
             bubbleMultiplier={multipliers.gp4}
             onClick={() => openPicker("gp4")}
@@ -212,9 +199,10 @@ export default function AffinityLayout(): React.JSX.Element {
       </div>
 
       <CharacterPickerModal
+        key={`${activeSlot}-${modalKey}`}
         open={pickerOpen}
         title={titleForSlot(activeSlot)}
-        options={characters as string[]}
+        options={options}
         initialValue={slots[activeSlot]}
         onClose={() => setPickerOpen(false)}
         onConfirm={(value) => {

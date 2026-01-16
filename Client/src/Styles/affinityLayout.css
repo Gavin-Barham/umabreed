@@ -98,6 +98,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* IMPORTANT: prevent selected images from overflowing */
+  overflow: hidden;
 }
 
 /* Make button slots behave EXACTLY like div slots */
@@ -140,6 +143,18 @@ button.slot {
 
 .row--center .slotLabel {
   max-width: calc(var(--card) - 18px);
+}
+
+/* ✅ Selected character image inside slot */
+.slotImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;     /* keeps full character visible */
+  object-position: center;
+  padding: 10px;           /* keeps some breathing room */
+  display: block;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* ===== BUBBLE ===== */
@@ -222,7 +237,7 @@ button.slot {
 }
 
 /* =========================================================
-   MODAL PICKER (like screenshot, minus filters/images)
+   MODAL PICKER (image bubble + name under)
    ========================================================= */
 
 .modalOverlay {
@@ -325,40 +340,61 @@ button.slot {
 }
 
 .charTile {
-  height: 74px;
-  border-radius: 999px;
-  border: 2px solid rgba(0,0,0,0.15);
-  background: #f3f1f8;
-  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.10);
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
   cursor: pointer;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.charTile:focus {
+  outline: none;
+}
+
+.charCircle {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.18);
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: 10px;
+  overflow: hidden;
 }
 
-.charTile:hover {
-  background: #ece7f6;
+.charImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.charTile--active {
-  border-color: #2ea400;
-  box-shadow: 0 0 0 3px rgba(46, 164, 0, 0.25);
-  background: #f0ffe9;
-}
-
-.charTileText {
+.charName {
+  max-width: 92px;
+  font-size: 12px;
+  font-weight: 900;
   color: #5b2d2d;
-  font-weight: 800;
-  font-size: 14px;
   text-align: center;
 
-  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.charTile--active .charCircle {
+  border-color: #2ea400;
+  box-shadow: 0 0 0 3px rgba(46, 164, 0, 0.25), inset 0 -2px 0 rgba(0,0,0,0.08);
+}
+
+.charTile:hover .charCircle {
+  background: #f8f6ff;
 }
 
 .modalFooter {

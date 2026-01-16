@@ -1,12 +1,18 @@
 import React, { useMemo, useState } from "react";
 
+export type CharacterOption = {
+  id: number;
+  name: string;
+  image: string; // ideally "/CharacterSprites/1.png"
+};
+
 type Props = {
   open: boolean;
   title: string;
-  options: string[];
-  initialValue?: string | null;
+  options: CharacterOption[];
+  initialValue?: CharacterOption | null;
   onClose: () => void;
-  onConfirm: (value: string) => void;
+  onConfirm: (value: CharacterOption) => void;
 };
 
 export default function CharacterPickerModal({
@@ -17,15 +23,18 @@ export default function CharacterPickerModal({
   onClose,
   onConfirm,
 }: Props): React.JSX.Element | null {
-  // Initialize local state from props on mount.
-  // The parent will remount this component when opening via a changing `key`.
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<string | null>(initialValue);
+  const [selectedId, setSelectedId] = useState<number | null>(initialValue?.id ?? null);
+
+  const selected = useMemo(
+    () => (selectedId == null ? null : options.find((o) => o.id === selectedId) ?? null),
+    [options, selectedId]
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return options;
-    return options.filter((n) => n.toLowerCase().includes(q));
+    return options.filter((o) => o.name.toLowerCase().includes(q));
   }, [options, search]);
 
   if (!open) return null;
@@ -39,7 +48,7 @@ export default function CharacterPickerModal({
 
         <div className="modalBody">
           <div className="modalHint">
-            While this menu is open, pick a character then press OK.
+            Pick a character, then press OK.
           </div>
 
           <div className="modalSearchRow">
@@ -53,7 +62,7 @@ export default function CharacterPickerModal({
             <button
               type="button"
               className="modalSmallBtn"
-              onClick={() => setSelected(null)}
+              onClick={() => setSelectedId(null)}
               title="Clear selection"
             >
               Reset
@@ -62,16 +71,19 @@ export default function CharacterPickerModal({
 
           <div className="modalGridWrap">
             <div className="modalGrid">
-              {filtered.map((name) => {
-                const isActive = selected === name;
+              {filtered.map((c) => {
+                const isActive = selectedId === c.id;
                 return (
                   <button
-                    key={name}
+                    key={c.id}
                     type="button"
                     className={`charTile ${isActive ? "charTile--active" : ""}`}
-                    onClick={() => setSelected(name)}
+                    onClick={() => setSelectedId(c.id)}
                   >
-                    <div className="charTileText">{name}</div>
+                    <div className="charCircle">
+                      <img className="charImg" src={c.image} alt={c.name} loading="lazy" />
+                    </div>
+                    <div className="charName">{c.name}</div>
                   </button>
                 );
               })}
