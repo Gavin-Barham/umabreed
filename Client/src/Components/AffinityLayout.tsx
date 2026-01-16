@@ -1,35 +1,60 @@
 import React from "react";
-import "../Styles/affinityLayout.css";
+import "./AffinityLayout.css";
 
-type BubbleTone = "red" | "amber" | "green" | "olive";
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+function multiplierToColor(mult: number) {
+  // normalize 1.0 -> 0, 4.0 -> 1
+  const t = clamp((mult - 1.0) / (4.0 - 1.0), 0, 1);
+
+  // red -> green gradient
+  const r = Math.round(lerp(220, 80, t));
+  const g = Math.round(lerp(70, 200, t));
+  const b = Math.round(lerp(70, 70, t));
+
+  return `rgb(${r}, ${g}, ${b})`;
+}
 
 type BubbleProps = {
-  value?: string;
-  tone?: BubbleTone;
+  multiplier?: number | null;
 };
 
-function Bubble({ value = "x0.00", tone = "green" }: BubbleProps) {
-  return <div className={`bubble bubble--${tone}`}>{value}</div>;
+function Bubble({ multiplier }: { multiplier?: number | null }) {
+  const num = typeof multiplier === "number" ? multiplier : NaN;
+
+  // Unset if: undefined, null, NaN, OR <= 0
+  const unset = !Number.isFinite(num) || num <= 0;
+
+  const display = unset ? "x0.00" : `x${num.toFixed(2)}`;
+
+  const bg = unset ? "#ffffff" : multiplierToColor(num);
+  const fg = unset ? "rgba(0,0,0,0.70)" : "rgba(0,0,0,0.78)";
+
+  return (
+    <div className="bubble" style={{ backgroundColor: bg, color: fg }}>
+      {display}
+    </div>
+  );
 }
+
 
 type CardSlotProps = {
   label: string;
   showBubble?: boolean;
-  bubbleValue?: string;
-  bubbleTone?: BubbleTone;
+  bubbleMultiplier?: number | null;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 };
 
 function CardSlot({
   label,
   showBubble = false,
-  bubbleValue = "x0.00",
-  bubbleTone = "green",
+  bubbleMultiplier = null,
   onClick,
 }: CardSlotProps) {
   return (
     <div className="slotWrap">
-      {showBubble && <Bubble value={bubbleValue} tone={bubbleTone} />}
+      {showBubble && <Bubble multiplier={bubbleMultiplier} />}
       <button type="button" className="slot" onClick={onClick}>
         <span className="slotLabel">{label}</span>
       </button>
@@ -38,13 +63,14 @@ function CardSlot({
 }
 
 export default function AffinityLayout(): React.JSX.Element {
-  const multipliers = {
-    p1: "x0.00",
-    p2: "x0.00",
-    gp1: "x0.00",
-    gp2: "x0.00",
-    gp3: "x0.00",
-    gp4: "x0.00",
+  // Defaults: unset => white bubbles showing x0.00
+  const multipliers: Record<string, number | null> = {
+    p1: null,
+    p2: null,
+    gp1: null,
+    gp2: null,
+    gp3: null,
+    gp4: null,
   };
 
   return (
@@ -60,20 +86,23 @@ export default function AffinityLayout(): React.JSX.Element {
       </div>
 
       <div className="gridArea">
+        {/* Top / child */}
         <div className="row row--center">
           <CardSlot label="Child" />
         </div>
 
+        {/* Parents (2) */}
         <div className="row row--two">
-          <CardSlot label="Parent 1" showBubble bubbleValue={multipliers.p1} bubbleTone="red" />
-          <CardSlot label="Parent 2" showBubble bubbleValue={multipliers.p2} bubbleTone="amber" />
+          <CardSlot label="Parent 1" showBubble bubbleMultiplier={multipliers.p1} />
+          <CardSlot label="Parent 2" showBubble bubbleMultiplier={multipliers.p2} />
         </div>
 
+        {/* Grandparents (4) */}
         <div className="row row--four">
-          <CardSlot label="GP 1" showBubble bubbleValue={multipliers.gp1} bubbleTone="green" />
-          <CardSlot label="GP 2" showBubble bubbleValue={multipliers.gp2} bubbleTone="green" />
-          <CardSlot label="GP 3" showBubble bubbleValue={multipliers.gp3} bubbleTone="olive" />
-          <CardSlot label="GP 4" showBubble bubbleValue={multipliers.gp4} bubbleTone="green" />
+          <CardSlot label="GP 1" showBubble bubbleMultiplier={multipliers.gp1} />
+          <CardSlot label="GP 2" showBubble bubbleMultiplier={multipliers.gp2} />
+          <CardSlot label="GP 3" showBubble bubbleMultiplier={multipliers.gp3} />
+          <CardSlot label="GP 4" showBubble bubbleMultiplier={multipliers.gp4} />
         </div>
       </div>
 

@@ -52,12 +52,11 @@ body {
 }
 
 .gridArea {
-  /* take remaining space between topBar and bottomBar */
   flex: 1 1 auto;
-  min-height: 0;          /* crucial: allows flex child to shrink instead of overflow */
+  min-height: 0;          /* allows flex child to shrink instead of overflow */
   display: flex;
   flex-direction: column;
-  justify-content: center; /* vertically center content */
+  justify-content: center;
   align-items: center;
   gap: clamp(12px, 3vmin, 26px);
 }
@@ -116,19 +115,14 @@ body {
   transform: translateX(-50%);
   padding: clamp(4px, 0.9vmin, 6px) clamp(10px, 1.6vmin, 14px);
   border-radius: 999px;
-  font-weight: 800;
+  font-weight: 900;
   font-size: clamp(11px, 1.6vmin, 14px);
-  color: rgba(0,0,0,0.75);
+  color: rgba(0,0,0,0.78);
   box-shadow: 0 8px 18px rgba(0,0,0,0.25);
   border: 1px solid rgba(255,255,255,0.35);
   white-space: nowrap;
   z-index: 1;
 }
-
-.bubble--red   { background: #c46a66; color: #1b0c0c; }
-.bubble--amber { background: #b58a2c; color: #140d00; }
-.bubble--green { background: #7fb34f; color: #0b1204; }
-.bubble--olive { background: #a2b24b; color: #111406; }
 
 .bottomBar {
   flex: 0 0 auto;
@@ -146,7 +140,7 @@ body {
 .bottomLeft {
   background: #8f82b8;
   color: #111;
-  font-weight: 800;
+  font-weight: 900;
   padding: 0 clamp(10px, 1.8vmin, 14px);
   height: 100%;
   display: flex;
