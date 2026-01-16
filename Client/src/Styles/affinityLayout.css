@@ -396,6 +396,19 @@ button.slot {
 .charTile:hover .charCircle {
   background: #f8f6ff;
 }
+.modalCountPill {
+  height: 40px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #5b2d2d;
+}
 
 .modalFooter {
   padding: 14px 16px;
@@ -431,3 +444,42 @@ button.slot {
   opacity: 0.55;
   cursor: not-allowed;
 }
+/* Pink score badge (like in your reference) */
+/* Ensure the circle is the positioning container for the badge */
+.charCircle {
+  position: relative;
+  overflow: visible; /* allow badge to hang below */
+}
+
+/* Badge */
+.charScore {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+
+  min-width: 28px;
+  height: 18px;
+  padding: 0 8px;
+
+  border-radius: 999px;
+  background: #ff3b86;
+  color: #fff;
+
+  font-weight: 900;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+
+  box-shadow: 0 8px 14px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+
+  pointer-events: none;
+}
+
+/* If any parent is clipping, this helps */
+.charTile {
+  overflow: visible;
+}
+

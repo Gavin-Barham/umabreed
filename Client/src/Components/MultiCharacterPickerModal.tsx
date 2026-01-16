@@ -10,31 +10,28 @@ type Props = {
   open: boolean;
   title: string;
   options: CharacterOption[];
-  initialValue?: CharacterOption | null;
+  initialSelectedIds?: string[];
   onClose: () => void;
-  onConfirm: (value: CharacterOption) => void;
+  onConfirm: (selected: CharacterOption[]) => void;
 
   showScore?: boolean;
   scoreById?: Record<string, number>;
 };
 
-export default function CharacterPickerModal({
+export default function MultiCharacterPickerModal({
   open,
   title,
   options,
-  initialValue = null,
+  initialSelectedIds = [],
   onClose,
   onConfirm,
   showScore = false,
   scoreById = {},
 }: Props): React.JSX.Element | null {
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(initialValue?.id ?? null);
-
-  const selected = useMemo(() => {
-    if (!selectedId) return null;
-    return options.find((o) => o.id === selectedId) ?? null;
-  }, [options, selectedId]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(initialSelectedIds)
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -42,7 +39,21 @@ export default function CharacterPickerModal({
     return options.filter((o) => o.name.toLowerCase().includes(q));
   }, [options, search]);
 
+  const selectedList = useMemo(() => {
+    if (selectedIds.size === 0) return [];
+    return options.filter((o) => selectedIds.has(o.id));
+  }, [options, selectedIds]);
+
   if (!open) return null;
+
+  const toggle = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <div className="modalOverlay" role="dialog" aria-modal="true">
@@ -52,7 +63,7 @@ export default function CharacterPickerModal({
         </div>
 
         <div className="modalBody">
-          <div className="modalHint">Pick a character, then press OK.</div>
+          <div className="modalHint">Select multiple, then press OK.</div>
 
           <div className="modalSearchRow">
             <input
@@ -65,17 +76,21 @@ export default function CharacterPickerModal({
             <button
               type="button"
               className="modalSmallBtn"
-              onClick={() => setSelectedId(null)}
-              title="Clear selection"
+              onClick={() => setSelectedIds(new Set())}
+              title="Clear all selections"
             >
               Reset
             </button>
+
+            <div className="modalCountPill" title="Selected count">
+              {selectedIds.size}
+            </div>
           </div>
 
           <div className="modalGridWrap">
             <div className="modalGrid">
               {filtered.map((c) => {
-                const isActive = selectedId === c.id;
+                const isActive = selectedIds.has(c.id);
                 const score = showScore ? scoreById[c.id] : undefined;
 
                 return (
@@ -83,7 +98,7 @@ export default function CharacterPickerModal({
                     key={c.id}
                     type="button"
                     className={`charTile ${isActive ? "charTile--active" : ""}`}
-                    onClick={() => setSelectedId(c.id)}
+                    onClick={() => toggle(c.id)}
                   >
                     <div className="charCircle">
                       <img className="charImg" src={c.image} alt={c.name} loading="lazy" />
@@ -109,11 +124,8 @@ export default function CharacterPickerModal({
           <button
             type="button"
             className="modalBtn modalBtn--ok"
-            disabled={!selected}
-            onClick={() => {
-              if (!selected) return;
-              onConfirm(selected);
-            }}
+            disabled={selectedIds.size === 0}
+            onClick={() => onConfirm(selectedList)}
           >
             OK
           </button>

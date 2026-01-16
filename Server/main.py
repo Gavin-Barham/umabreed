@@ -1,8 +1,10 @@
 import pandas as pd
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from itertools import product
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:5173"]}})
 Data_dir = './data/'
 
 # --- GLOBAL DATA CONTAINERS ---
