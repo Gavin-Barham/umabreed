@@ -180,10 +180,6 @@ def optimize():
         return jsonify({"error": "exactly 7 character names are required"}), 400
     # Default to all names if available_names not provided
     available_names = data.get('available_names', list(name_to_id.keys()))
-    
-    for name in lineage_names:
-        if name and name not in available_names:
-            return jsonify({"error": f"Character name '{name}' not in available names"}), 400
         
     result = find_optimal_lineage(lineage_names, available_names)
 
