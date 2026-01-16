@@ -124,6 +124,10 @@ def find_optimal_lineage(lineage_names, available_names):
 
 # --- API ENDPOINTS ---
 
+#---Get Character Names Endpoint ---
+@app.route('/characters', methods=['GET'])
+def get_characters():
+    return jsonify(list(name_to_id.keys()))
 
 # --- Get Affinity Endpoint ---
 # input json {'character_name': str}
