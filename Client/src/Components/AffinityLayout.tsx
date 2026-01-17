@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "../Styles/affinityLayout.css";
 
 import CharacterPickerModal from "./CharacterPickerModal";
@@ -33,6 +33,33 @@ async function fetchAffinity(childName: string): Promise<Record<string, number>>
   });
   if (!res.ok) throw new Error(`POST /affinity failed: ${res.status}`);
   return (await res.json()) as Record<string, number>;
+}
+
+type LineageStatsResponse = {
+  P1: number;
+  P2: number;
+  GP1_1: number;
+  GP1_2: number;
+  GP2_1: number;
+  GP2_2: number;
+  "Total compatibility": number;
+  "Displayed affinity": number;
+  lineage: [string, string, string, string, string, string, string];
+};
+
+async function postLineageStats(lineage: [string, string, string, string, string, string, string]) {
+  const res = await fetch(`${API_BASE}/lineage_stats`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lineage }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`POST /lineage_stats failed: ${res.status} ${text}`);
+  }
+
+  return (await res.json()) as LineageStatsResponse;
 }
 
 type OptimizeResponse = {
@@ -81,7 +108,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * Bubble color scale: 1.0 -> 1.5
  */
 function multiplierToColor(mult: number) {
-  const t = clamp((mult - 1.0) / 0.5, 0, 1); // 1.0..1.5
+  const t = clamp((mult - 1.0) / 0.5, 0, 1);
   const r = Math.round(lerp(220, 80, t));
   const g = Math.round(lerp(70, 200, t));
   const b = Math.round(lerp(70, 70, t));
@@ -154,36 +181,39 @@ export default function AffinityLayout(): React.JSX.Element {
 
   const childSelected = !!slots.child;
 
-  // Bottom bar metrics (were hardcoded 0 before)
   const [displayedAffinity, setDisplayedAffinity] = useState<number>(0);
   const [totalCompatibility, setTotalCompatibility] = useState<number>(0);
 
-  // Latest affinity map for selected child (drives badges + bubbles)
-  const [childAffinity, setChildAffinity] = useState<Record<string, number>>({});
+  // lineage_stats values that drive bubble multipliers
+  const [lineageScores, setLineageScores] = useState<{
+    p1?: number;
+    p2?: number;
+    gp1?: number;
+    gp2?: number;
+    gp3?: number;
+    gp4?: number;
+  }>({});
 
-  // Bubble multipliers derived from selected name -> affinity score -> score/100+1
   const multipliers = useMemo(() => {
     return {
-      p1: scoreToMultiplier(childAffinity[slots.p1?.id ?? ""]),
-      p2: scoreToMultiplier(childAffinity[slots.p2?.id ?? ""]),
-      gp1: scoreToMultiplier(childAffinity[slots.gp1?.id ?? ""]),
-      gp2: scoreToMultiplier(childAffinity[slots.gp2?.id ?? ""]),
-      gp3: scoreToMultiplier(childAffinity[slots.gp3?.id ?? ""]),
-      gp4: scoreToMultiplier(childAffinity[slots.gp4?.id ?? ""]),
+      p1: slots.p1 ? scoreToMultiplier(lineageScores.p1 ?? 0) : null,
+      p2: slots.p2 ? scoreToMultiplier(lineageScores.p2 ?? 0) : null,
+      gp1: slots.gp1 ? scoreToMultiplier(lineageScores.gp1 ?? 0) : null,
+      gp2: slots.gp2 ? scoreToMultiplier(lineageScores.gp2 ?? 0) : null,
+      gp3: slots.gp3 ? scoreToMultiplier(lineageScores.gp3 ?? 0) : null,
+      gp4: slots.gp4 ? scoreToMultiplier(lineageScores.gp4 ?? 0) : null,
     };
-  }, [childAffinity, slots]);
+  }, [lineageScores, slots]);
 
   // Recommend pool (multi-select)
   const [availableUmas, setAvailableUmas] = useState<MultiCharacterOption[]>([]);
 
-  // Single picker modal state
+  // SINGLE-SELECT modal state (boxes)
   const [pickerOpen, setPickerOpen] = useState(false);
   const [activeSlot, setActiveSlot] = useState<SlotKey>("child");
   const [modalKey, setModalKey] = useState(0);
   const [pickerOptions, setPickerOptions] = useState<CharacterOption[]>([]);
   const [pickerTitle, setPickerTitle] = useState("Select Character");
-
-  // Score map for P/GP modal tiles
   const [pickerScoreById, setPickerScoreById] = useState<Record<string, number>>({});
   const [pickerShowScore, setPickerShowScore] = useState(false);
 
@@ -213,7 +243,7 @@ export default function AffinityLayout(): React.JSX.Element {
 
     setActiveSlot(slot);
     setPickerTitle(titleForSlot(slot));
-    setModalKey((k) => k + 1); // remount -> clears search
+    setModalKey((k) => k + 1);
 
     try {
       if (slot === "child") {
@@ -224,8 +254,6 @@ export default function AffinityLayout(): React.JSX.Element {
       } else {
         const childName = slots.child!.name;
         const aff = await fetchAffinity(childName);
-
-        setChildAffinity(aff);
 
         const names = sortAffinityKeysDesc(aff);
         setPickerOptions(names.map(toOption));
@@ -243,7 +271,7 @@ export default function AffinityLayout(): React.JSX.Element {
     }
   };
 
-  // Recommend modal state
+  // MULTI-SELECT modal state (Recommend)
   const [recommendOpen, setRecommendOpen] = useState(false);
   const [recommendKey, setRecommendKey] = useState(0);
   const [recommendOptions, setRecommendOptions] = useState<MultiCharacterOption[]>([]);
@@ -258,8 +286,6 @@ export default function AffinityLayout(): React.JSX.Element {
       const childName = slots.child.name;
       const aff = await fetchAffinity(childName);
 
-      setChildAffinity(aff);
-
       const names = sortAffinityKeysDesc(aff).filter((n) => n !== childName);
 
       setRecommendOptions(names.map((n) => ({ id: n, name: n, image: imgFromName(n) })));
@@ -273,66 +299,100 @@ export default function AffinityLayout(): React.JSX.Element {
     }
   };
 
- const handleRecommendConfirm = (selected: MultiCharacterOption[]) => {
-  setAvailableUmas(selected);
-  setRecommendOpen(false);
+  const handleRecommendConfirm = (selected: MultiCharacterOption[]) => {
+    setAvailableUmas(selected);
+    setRecommendOpen(false);
 
-  void (async () => {
-    try {
-      const childName = slots.child?.name;
-      if (!childName) return;
+    void (async () => {
+      try {
+        const childName = slots.child?.name;
+        if (!childName) return;
 
-      // ✅ lineage_names uses existing selections (P/GP), blanks for unselected
-      const lineage_names: [string, string, string, string, string, string, string] = [
-        childName,
-        slots.p1?.name ?? "",
-        slots.p2?.name ?? "",
-        slots.gp1?.name ?? "",
-        slots.gp2?.name ?? "",
-        slots.gp3?.name ?? "",
-        slots.gp4?.name ?? "",
-      ];
+        const lineage_names: [string, string, string, string, string, string, string] = [
+          childName,
+          slots.p1?.name ?? "",
+          slots.p2?.name ?? "",
+          slots.gp1?.name ?? "",
+          slots.gp2?.name ?? "",
+          slots.gp3?.name ?? "",
+          slots.gp4?.name ?? "",
+        ];
 
-      // ✅ available_names is ONLY the multiselect modal picks
-      const available_names = selected.map((s) => s.name);
+        const available_names = selected.map((s) => s.name);
+        const payload = { lineage_names, available_names };
 
-      const payload = { lineage_names, available_names };
+        console.log("[/optimize] request payload:", payload);
 
-      // ✅ log what we're sending
-      console.log("[/optimize] request payload:", payload);
+        const result = await postOptimize(payload);
 
-      const result = await postOptimize(payload);
+        console.log("[/optimize] response:", result);
 
-      // ✅ log what we got back
-      console.log("[/optimize] response:", result);
+        const [rChild, rP1, rP2, rGP1, rGP2, rGP3, rGP4] = result.lineage;
 
-      // Update bottom bar numbers
-      setDisplayedAffinity(result["Displayed affinity"] ?? 0);
-      setTotalCompatibility(result["Total compatibility"] ?? 0);
+        setSlots((prev) => ({
+          child: prev.child ?? (rChild ? toOption(rChild) : null),
+          p1: prev.p1 ?? (rP1 ? toOption(rP1) : null),
+          p2: prev.p2 ?? (rP2 ? toOption(rP2) : null),
+          gp1: prev.gp1 ?? (rGP1 ? toOption(rGP1) : null),
+          gp2: prev.gp2 ?? (rGP2 ? toOption(rGP2) : null),
+          gp3: prev.gp3 ?? (rGP3 ? toOption(rGP3) : null),
+          gp4: prev.gp4 ?? (rGP4 ? toOption(rGP4) : null),
+        }));
+      } catch (e) {
+        console.error("[/optimize] error:", e);
+      }
+    })();
+  };
 
-      const [rChild, rP1, rP2, rGP1, rGP2, rGP3, rGP4] = result.lineage;
+  /**
+   * ✅ Any time slots change AND a child is present, call /lineage_stats
+   * to update metrics + bubble multipliers.
+   *
+   * Note: We intentionally avoid synchronous setState in this effect (eslint rule).
+   * We reset metrics in the child selection handler / reset button instead.
+   */
+  useEffect(() => {
+    const childName = slots.child?.name ?? "";
+    if (!childName) return;
 
-      // Fill ONLY slots the user did not pick
-      setSlots((prev) => ({
-        child: prev.child ?? (rChild ? toOption(rChild) : null),
-        p1: prev.p1 ?? (rP1 ? toOption(rP1) : null),
-        p2: prev.p2 ?? (rP2 ? toOption(rP2) : null),
-        gp1: prev.gp1 ?? (rGP1 ? toOption(rGP1) : null),
-        gp2: prev.gp2 ?? (rGP2 ? toOption(rGP2) : null),
-        gp3: prev.gp3 ?? (rGP3 ? toOption(rGP3) : null),
-        gp4: prev.gp4 ?? (rGP4 ? toOption(rGP4) : null),
-      }));
+    const lineage: [string, string, string, string, string, string, string] = [
+      childName,
+      slots.p1?.name ?? "",
+      slots.p2?.name ?? "",
+      slots.gp1?.name ?? "",
+      slots.gp2?.name ?? "",
+      slots.gp3?.name ?? "",
+      slots.gp4?.name ?? "",
+    ];
 
-      // Refresh affinity map for bubbles/badges
-      const nextChild = rChild || childName;
-      const aff = await fetchAffinity(nextChild);
-      setChildAffinity(aff);
-    } catch (e) {
-      console.error("[/optimize] error:", e);
-    }
-  })();
-};
+    let cancelled = false;
 
+    void (async () => {
+      try {
+        const stats = await postLineageStats(lineage);
+        if (cancelled) return;
+
+        setDisplayedAffinity(stats["Displayed affinity"] ?? 0);
+        setTotalCompatibility(stats["Total compatibility"] ?? 0);
+
+        setLineageScores({
+          p1: stats.P1 ?? 0,
+          p2: stats.P2 ?? 0,
+          gp1: stats.GP1_1 ?? 0,
+          gp2: stats.GP1_2 ?? 0,
+          gp3: stats.GP2_1 ?? 0,
+          gp4: stats.GP2_2 ?? 0,
+        });
+      } catch (e) {
+        if (cancelled) return;
+        console.error("[/lineage_stats] error:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slots.child, slots.p1, slots.p2, slots.gp1, slots.gp2, slots.gp3, slots.gp4]);
 
   return (
     <div className="page">
@@ -343,11 +403,11 @@ export default function AffinityLayout(): React.JSX.Element {
           onClick={() => {
             setSlots({ child: null, p1: null, p2: null, gp1: null, gp2: null, gp3: null, gp4: null });
             setAvailableUmas([]);
-            setChildAffinity({});
             setPickerScoreById({});
             setRecommendScoreById({});
             setDisplayedAffinity(0);
             setTotalCompatibility(0);
+            setLineageScores({});
           }}
         >
           Reset
@@ -440,7 +500,6 @@ export default function AffinityLayout(): React.JSX.Element {
         <div className="bottomRight">Compatibility</div>
       </div>
 
-      {/* Single-select picker */}
       <CharacterPickerModal
         key={`${activeSlot}-${modalKey}`}
         open={pickerOpen}
@@ -452,11 +511,12 @@ export default function AffinityLayout(): React.JSX.Element {
           setPickerOpen(false);
 
           if (activeSlot === "child") {
-            // child changes: clear lineage (but keep child), reset metrics, reset affinity map
-            setAvailableUmas((prev) => prev.filter((u) => u.id !== value.id));
-            setChildAffinity({});
+            // ✅ reset metrics immediately on child change (no effect state resets)
             setDisplayedAffinity(0);
             setTotalCompatibility(0);
+            setLineageScores({});
+
+            setAvailableUmas((prev) => prev.filter((u) => u.id !== value.id));
 
             setSlots({
               child: value,
@@ -476,7 +536,6 @@ export default function AffinityLayout(): React.JSX.Element {
         scoreById={pickerScoreById}
       />
 
-      {/* Recommend multi-select picker */}
       <MultiCharacterPickerModal
         key={`recommend-${recommendKey}`}
         open={recommendOpen}

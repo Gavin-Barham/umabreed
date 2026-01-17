@@ -44,9 +44,14 @@ export default function MultiCharacterPickerModal({
     return options.filter((o) => selectedIds.has(o.id));
   }, [options, selectedIds]);
 
+  const allVisibleSelected = useMemo(() => {
+    if (filtered.length === 0) return false;
+    return filtered.every((o) => selectedIds.has(o.id));
+  }, [filtered, selectedIds]);
+
   if (!open) return null;
 
-  const toggle = (id: string) => {
+  const toggleOne = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -54,6 +59,28 @@ export default function MultiCharacterPickerModal({
       return next;
     });
   };
+
+  // ✅ Toggle Select/Deselect all VISIBLE (filtered)
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (filtered.length === 0) return next;
+
+      const everythingVisibleIsSelected = filtered.every((o) => next.has(o.id));
+
+      if (everythingVisibleIsSelected) {
+        // Deselect only visible
+        for (const o of filtered) next.delete(o.id);
+      } else {
+        // Select only visible
+        for (const o of filtered) next.add(o.id);
+      }
+
+      return next;
+    });
+  };
+
+  const reset = () => setSelectedIds(new Set());
 
   return (
     <div className="modalOverlay" role="dialog" aria-modal="true">
@@ -76,15 +103,25 @@ export default function MultiCharacterPickerModal({
             <button
               type="button"
               className="modalSmallBtn"
-              onClick={() => setSelectedIds(new Set())}
+              onClick={toggleAllVisible}
+              disabled={filtered.length === 0}
+              title={
+                allVisibleSelected
+                  ? "Deselect all visible results"
+                  : "Select all visible results"
+              }
+            >
+              {allVisibleSelected ? "Deselect All" : "Select All"}
+            </button>
+
+            <button
+              type="button"
+              className="modalSmallBtn"
+              onClick={reset}
               title="Clear all selections"
             >
               Reset
             </button>
-
-            <div className="modalCountPill" title="Selected count">
-              {selectedIds.size}
-            </div>
           </div>
 
           <div className="modalGridWrap">
@@ -98,10 +135,15 @@ export default function MultiCharacterPickerModal({
                     key={c.id}
                     type="button"
                     className={`charTile ${isActive ? "charTile--active" : ""}`}
-                    onClick={() => toggle(c.id)}
+                    onClick={() => toggleOne(c.id)}
                   >
                     <div className="charCircle">
-                      <img className="charImg" src={c.image} alt={c.name} loading="lazy" />
+                      <img
+                        className="charImg"
+                        src={c.image}
+                        alt={c.name}
+                        loading="lazy"
+                      />
                       {showScore && typeof score === "number" && (
                         <div className="charScore" title={`Affinity: ${score}`}>
                           {score}
@@ -117,7 +159,11 @@ export default function MultiCharacterPickerModal({
         </div>
 
         <div className="modalFooter">
-          <button type="button" className="modalBtn modalBtn--ghost" onClick={onClose}>
+          <button
+            type="button"
+            className="modalBtn modalBtn--ghost"
+            onClick={onClose}
+          >
             Back
           </button>
 

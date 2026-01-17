@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 
 export type CharacterOption = {
-  id: string; // name as id
+  id: string;
   name: string;
   image: string;
 };
