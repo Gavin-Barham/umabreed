@@ -91,7 +91,15 @@ def find_optimal_lineage(lineage_names, available_names):
         best_halves[p] = (top_score, top_gps)
 
     best_total_score = -1
-    best_lineage_result = None
+    best_lineage_result = []
+
+    #problem fixed grandparents can be duplicated in a half by being the top gp for a parent
+    #possibilities of failures: 
+    # fixed gp1, top gp is gp1 -> gp1 duplicated
+    # fixed gp1, top2 gp is gp1 -> gp1 swap position
+    # fixed gp1 and gp2, top gp is gp1, top2 gp is gp2 -> gps swap positions
+
+    #CHECK IF FIXED
 
     for p1, p2 in product(available_parent_names, repeat=2):
         if p1 == p2: continue
@@ -99,24 +107,45 @@ def find_optimal_lineage(lineage_names, available_names):
         if lineage_names[2] and p2 != lineage_names[2]: continue
 
         scores_p1, gps_p1 = best_halves[p1]
-        counter = 1
-        if lineage_names[3]:
-            gps_p1[counter] = lineage_names[3]
-            scores_p1[counter] = get_character_affinity(child_name,p1,lineage_names[3])
-            counter -= 1
-        if lineage_names[4]:
-            gps_p1[counter] = lineage_names[4]
-            scores_p1[counter] = get_character_affinity(child_name,p1,lineage_names[4])
+
+        if lineage_names[3] and lineage_names[4]:
+            gps_p1 = [lineage_names[3], lineage_names[4]]
+            scores_p1 = [get_character_affinity(child_name,p1,lineage_names[3]),
+                         get_character_affinity(child_name,p1,lineage_names[4])]
+        elif lineage_names[3] and (lineage_names[3] != gps_p1[0]):
+            if lineage_names[3] == gps_p1[1]:
+                gps_p1[1], gps_p1[0] = gps_p1[0], gps_p1[1]
+                scores_p1[1], scores_p1[0] = scores_p1[0], scores_p1[1]
+            else:
+                gps_p1[1] = lineage_names[3]
+                scores_p1[1] = get_character_affinity(child_name,p1,lineage_names[3])
+        elif lineage_names[4] and (lineage_names[4] != gps_p1[1]):
+            if lineage_names[4] == gps_p1[0]:
+                gps_p1[1], gps_p1[0] = gps_p1[0], gps_p1[1]
+                scores_p1[1], scores_p1[0] = scores_p1[0], scores_p1[1]
+            else:
+                gps_p1[1] = lineage_names[4]
+                scores_p1[1] = get_character_affinity(child_name,p1,lineage_names[4])
 
         scores_p2, gps_p2 = best_halves[p2]
-        counter = 1
-        if lineage_names[5]:
-            gps_p2[counter] = lineage_names[5]
-            scores_p2[counter] = get_character_affinity(child_name,p2,lineage_names[5])
-            counter -= 1
-        if lineage_names[6]:
-            gps_p2[counter] = lineage_names[6]
-            scores_p2[counter] = get_character_affinity(child_name,p2,lineage_names[6])
+        if lineage_names[5] and lineage_names[6]:
+            gps_p2 = [lineage_names[5], lineage_names[6]]
+            scores_p2 = [get_character_affinity(child_name,p2,lineage_names[5]),
+                         get_character_affinity(child_name,p2,lineage_names[6])]
+        elif lineage_names[5] and (lineage_names[5] != gps_p2[0]):
+            if lineage_names[5] == gps_p2[1]:
+                gps_p2[1], gps_p2[0] = gps_p2[0], gps_p2[1]
+                scores_p2[1], scores_p2[0] = scores_p2[0], scores_p2[1]
+            else:
+                gps_p2[1] = lineage_names[5]
+                scores_p2[1] = get_character_affinity(child_name,p2,lineage_names[5])
+        elif lineage_names[6] and (lineage_names[6] != gps_p2[1]):
+            if lineage_names[6] == gps_p2[0]:
+                gps_p2[1], gps_p2[0] = gps_p2[0], gps_p2[1]
+                scores_p2[1], scores_p2[0] = scores_p2[0], scores_p2[1]
+            else:
+                gps_p2[1] = lineage_names[6]
+                scores_p2[1] = get_character_affinity(child_name,p2,lineage_names[6])
 
         aff_p1_p2 = get_character_affinity(p1, p2)
         
