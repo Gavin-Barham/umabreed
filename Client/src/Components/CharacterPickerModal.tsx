@@ -1,0 +1,124 @@
+import React, { useMemo, useState } from "react";
+
+export type CharacterOption = {
+  id: string;
+  name: string;
+  image: string;
+};
+
+type Props = {
+  open: boolean;
+  title: string;
+  options: CharacterOption[];
+  initialValue?: CharacterOption | null;
+  onClose: () => void;
+  onConfirm: (value: CharacterOption) => void;
+
+  showScore?: boolean;
+  scoreById?: Record<string, number>;
+};
+
+export default function CharacterPickerModal({
+  open,
+  title,
+  options,
+  initialValue = null,
+  onClose,
+  onConfirm,
+  showScore = false,
+  scoreById = {},
+}: Props): React.JSX.Element | null {
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(initialValue?.id ?? null);
+
+  const selected = useMemo(() => {
+    if (!selectedId) return null;
+    return options.find((o) => o.id === selectedId) ?? null;
+  }, [options, selectedId]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.name.toLowerCase().includes(q));
+  }, [options, search]);
+
+  if (!open) return null;
+
+  return (
+    <div className="modalOverlay" role="dialog" aria-modal="true">
+      <div className="modalCard">
+        <div className="modalHeader">
+          <div className="modalTitle">{title}</div>
+        </div>
+
+        <div className="modalBody">
+          <div className="modalHint">Pick a character, then press OK.</div>
+
+          <div className="modalSearchRow">
+            <input
+              className="modalSearch"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+
+            <button
+              type="button"
+              className="modalSmallBtn"
+              onClick={() => setSelectedId(null)}
+              title="Clear selection"
+            >
+              Reset
+            </button>
+          </div>
+
+          <div className="modalGridWrap">
+            <div className="modalGrid">
+              {filtered.map((c) => {
+                const isActive = selectedId === c.id;
+                const score = showScore ? scoreById[c.id] : undefined;
+
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`charTile ${isActive ? "charTile--active" : ""}`}
+                    onClick={() => setSelectedId(c.id)}
+                  >
+                    <div className="charCircle">
+                      <img className="charImg" src={c.image} alt={c.name} loading="lazy" />
+                      {showScore && typeof score === "number" && (
+                        <div className="charScore" title={`Affinity: ${score}`}>
+                          {score}
+                        </div>
+                      )}
+                    </div>
+                    <div className="charName">{c.name}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="modalFooter">
+          <button type="button" className="modalBtn modalBtn--ghost" onClick={onClose}>
+            Back
+          </button>
+
+          <button
+            type="button"
+            className="modalBtn modalBtn--ok"
+            disabled={!selected}
+            onClick={() => {
+              if (!selected) return;
+              onConfirm(selected);
+            }}
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
